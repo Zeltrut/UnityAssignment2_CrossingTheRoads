@@ -22,10 +22,10 @@ public class PlayerInputHandler : MonoBehaviour
     private InputAction jumpAction;
     private InputAction sprintAction;
 
-    public Vector2 MovementInput {  get; private set; }
-    public Vector2 RotationInput {  get; private set; }
-    public bool JumpTriggered {  get; private set; }
-    public bool SprintTriggered {  get; private set; }
+    public Vector2 MovementInput { get; private set; }
+    public Vector2 RotationInput { get; private set; }
+    public bool JumpTriggered { get; private set; }
+    public bool SprintTriggered { get; private set; }
 
     private void Awake()
     {
@@ -56,10 +56,20 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void OnEnable()
     {
-        playerControls.FindActionMap(actionMapName).Enable();
+        EnableGameplayInput();
     }
 
     private void OnDisable()
+    {
+        DisableGameplayInput();
+    }
+
+    public void EnableGameplayInput()
+    {
+        playerControls.FindActionMap(actionMapName).Enable();
+    }
+
+    public void DisableGameplayInput()
     {
         playerControls.FindActionMap(actionMapName).Disable();
     }

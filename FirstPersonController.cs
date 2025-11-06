@@ -7,11 +7,11 @@ public class FirstPersonController : MonoBehaviour
 {
     [Header("Movement Speed")]
     [Tooltip("The base speed of the player before any carrots are collected.")]
-    [SerializeField] private float baseSpeed = 7.0f;
+    [SerializeField] private float baseSpeed = 5.0f;
 
     [Header("Power-up Settings")]
     [Tooltip("The player's speed will be multiplied by this value for each carrot collected.")]
-    [SerializeField] private float speedMultiplierPerCarrot = 1.1f;
+    [SerializeField] private float speedMultiplierPerCarrot = 1.5f; // e.g., 1.1 is a 10% increase per carrot
 
     [Header("Jump Parameters")]
     [SerializeField] private float jumpForce = 5.0f;
@@ -35,8 +35,8 @@ public class FirstPersonController : MonoBehaviour
     {
         get
         {
-            // Speed = baseSpeed * (multiplier ^ carrotCount)
-            return baseSpeed * Mathf.Pow(speedMultiplierPerCarrot, GameInfo.carrotCount);
+            // Speed = baseSpeed * (multiplier ^ collectibleCount)
+            return baseSpeed * Mathf.Pow(speedMultiplierPerCarrot, GameInfo.collectibleCount);
         }
     }
 
@@ -47,13 +47,11 @@ public class FirstPersonController : MonoBehaviour
         {
             Debug.LogWarning("Player Animator component not found. Animations will be disabled.");
         }
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
     }
 
     void Update()
     {
+        // Check for pause state first
         if (PauseController.IsGamePaused)
         {
             if (animator != null)
@@ -71,26 +69,27 @@ public class FirstPersonController : MonoBehaviour
     {
         if (animator == null) return;
 
+        // strafe input
         Vector2 moveInput = playerInputHandler.MovementInput;
-        Vector2 clampedInput = new Vector2(moveInput.x, Mathf.Clamp(moveInput.y, 0f, 1f));
 
-        bool isMoving = characterController.isGrounded && clampedInput.magnitude > 0.1f;
+        // Since we are always moving forward, the Y input for the animator is always 1
+        Vector2 animationInput = new Vector2(moveInput.x, 1f);
+
+        bool isMoving = characterController.isGrounded;
 
         animator.SetBool("isWalking", isMoving);
 
-        if (isMoving)
-        {
-            animator.SetFloat("InputX", clampedInput.x);
-            animator.SetFloat("InputY", clampedInput.y);
-        }
+        animator.SetFloat("InputX", animationInput.x);
+        animator.SetFloat("InputY", animationInput.y);
     }
 
     private Vector3 CalculateWorldDirection()
     {
         Vector2 rawInput = playerInputHandler.MovementInput;
 
-        float forwardInput = Mathf.Clamp(rawInput.y, 0f, 1f);
+        float forwardInput = 1f; 
         
+        // The player's 'A' and 'D' (rawInput.x) will still control strafing
         Vector3 inputDirection = new Vector3(rawInput.x, 0f, forwardInput);
         Vector3 worldDirection = transform.TransformDirection(inputDirection);
         return worldDirection.normalized;
@@ -143,4 +142,3 @@ public class FirstPersonController : MonoBehaviour
         ApplyVerticalRotation(mouseYRotation);
     }
 }
-

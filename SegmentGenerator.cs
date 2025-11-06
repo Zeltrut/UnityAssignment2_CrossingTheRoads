@@ -7,25 +7,32 @@ public class SegmentGenerator : MonoBehaviour
     [Header("Generation Settings")]
     [Tooltip("The different segment prefabs that can be spawned.")]
     public GameObject[] segment;
+    [Tooltip("The final segment prefab with the portal.")]
+    [SerializeField] private GameObject endSegmentPrefab;
+    [Tooltip("How many random segments to generate before the end segment.")]
+    [SerializeField] private int maxSegments = 35;
+    
+    [Tooltip("The Z-axis position where the FIRST segment will spawn.")]
     [SerializeField] private float zPos = 50;
+    
+    [Tooltip("The length of one segment. This value will be added to zPos each time.")]
+    [SerializeField] private float segmentLength = 50f;
+
     [SerializeField] private bool creatingSegment = false;
 
+    private int segmentsGeneratedCount = 0;
+    private bool isLevelFinished = false;
+
     [Header("Dynamic Generation Speed")]
-    [Tooltip("The time to wait between segments when the player is below the speed threshold.")]
     [SerializeField] private float baseGenerationDelay = 2.3f;
-    [Tooltip("The time to wait between segments when the player is above the speed threshold.")]
     [SerializeField] private float fastGenerationDelay = 1.0f;
-    [Tooltip("The player speed required to trigger the faster generation delay.")]
     [SerializeField] private float speedThreshold = 20f;
     
     [Header("References")]
-    [Tooltip("A reference to the player's FirstPersonController script to read its speed.")]
     [SerializeField] private FirstPersonController firstPersonController;
 
     [Header("Optimization")]
-    [Tooltip("A reference to the player's transform for distance checks.")]
     [SerializeField] private Transform playerTransform;
-    [Tooltip("The distance behind the player at which segments will be destroyed.")]
     [SerializeField] private float destroyDistance = 100f;
 
     private List<GameObject> spawnedSegments = new List<GameObject>();
@@ -33,6 +40,9 @@ public class SegmentGenerator : MonoBehaviour
 
     void Start()
     {
+        segmentsGeneratedCount = 0;
+        isLevelFinished = false;
+
         if (playerTransform == null || firstPersonController == null)
         {
             GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -50,7 +60,7 @@ public class SegmentGenerator : MonoBehaviour
 
     void Update()
     {
-        if (creatingSegment == false)
+        if (creatingSegment == false && !isLevelFinished)
         {
             creatingSegment = true;
             StartCoroutine(GenerateSegmentCoroutine());
@@ -63,7 +73,6 @@ public class SegmentGenerator : MonoBehaviour
     {
         if (playerTransform == null) return;
 
-        // Loop backwards to safely remove items from the list while iterating.
         for (int i = spawnedSegments.Count - 1; i >= 0; i--)
         {
             if (playerTransform.position.z > spawnedSegments[i].transform.position.z + destroyDistance)
@@ -77,18 +86,28 @@ public class SegmentGenerator : MonoBehaviour
 
     IEnumerator GenerateSegmentCoroutine()
     {
-        int segmentNum = Random.Range(0, segment.Length);
         Vector3 spawnPosition = new Vector3(0, 0, zPos);
-        
-        GameObject newSegment = Instantiate(segment[segmentNum], spawnPosition, Quaternion.identity);
-        spawnedSegments.Add(newSegment);
-        generatedSegmentData.Add(new SegmentData { prefabIndex = segmentNum, position = spawnPosition });
 
-        zPos += 50;
+        if (segmentsGeneratedCount < maxSegments)
+        {
+            int segmentNum = Random.Range(0, segment.Length);
+            GameObject newSegment = Instantiate(segment[segmentNum], spawnPosition, Quaternion.identity);
+            spawnedSegments.Add(newSegment);
+            generatedSegmentData.Add(new SegmentData { prefabIndex = segmentNum, position = spawnPosition });
+            segmentsGeneratedCount++;
+        }
+        else if (segmentsGeneratedCount == maxSegments)
+        {
+            GameObject newSegment = Instantiate(endSegmentPrefab, spawnPosition, Quaternion.identity);
+            spawnedSegments.Add(newSegment);
+            generatedSegmentData.Add(new SegmentData { prefabIndex = -1, position = spawnPosition });
+            segmentsGeneratedCount++;
+            isLevelFinished = true;
+        }
 
+        zPos += segmentLength;
 
         float delay = baseGenerationDelay;
-        // If the controller is linked and the player's speed is over the threshold, use the faster delay.
         if (firstPersonController != null && firstPersonController.CurrentSpeed > speedThreshold)
         {
             delay = fastGenerationDelay;
@@ -102,6 +121,9 @@ public class SegmentGenerator : MonoBehaviour
     {
         StopAllCoroutines();
         creatingSegment = false;
+        
+        segmentsGeneratedCount = 0;
+        isLevelFinished = false;
 
         foreach (GameObject spawnedSegment in spawnedSegments)
         {
@@ -114,15 +136,25 @@ public class SegmentGenerator : MonoBehaviour
 
         foreach (SegmentData data in segmentsToLoad)
         {
-            GameObject loadedSegment = Instantiate(segment[data.prefabIndex], data.position, Quaternion.identity);
+            GameObject loadedSegment;
+            if (data.prefabIndex == -1)
+            {
+                loadedSegment = Instantiate(endSegmentPrefab, data.position, Quaternion.identity);
+                isLevelFinished = true;
+            }
+            else
+            {
+                loadedSegment = Instantiate(segment[data.prefabIndex], data.position, Quaternion.identity);
+                segmentsGeneratedCount++;
+            }
+            
             spawnedSegments.Add(loadedSegment);
             generatedSegmentData.Add(data);
         }
 
         if (spawnedSegments.Count > 0)
         {
-            zPos = spawnedSegments[spawnedSegments.Count - 1].transform.position.z + 50;
+            zPos = spawnedSegments[spawnedSegments.Count - 1].transform.position.z + segmentLength;
         }
     }
 }
-

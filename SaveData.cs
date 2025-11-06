@@ -13,6 +13,7 @@ public struct SegmentData
 public class SaveData
 {
     public Vector3 playerPosition;
-    public int carrotCounter;
+    // Renamed from carrotCounter
+    public int collectibleCount;
     public List<SegmentData> generatedSegments;
 }

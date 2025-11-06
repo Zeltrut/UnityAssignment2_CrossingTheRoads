@@ -2,12 +2,20 @@ using UnityEngine;
 
 public class GameInfo : MonoBehaviour
 {
-    public static int carrotCount = 0;
-    [SerializeField] GameObject carrotDisplay;
+    // Renamed from carrotCount to be generic
+    public static int collectibleCount = 0;
+    
+    [Header("UI References")]
+    [Tooltip("The TMPro Text component that displays the score.")]
+    [SerializeField] private TMPro.TMP_Text collectibleDisplay;
+    
+    [Header("Level Settings")]
+    [Tooltip("The name to display on the UI (e.g., CARROTS, DIAMONDS, TRASH)")]
+    [SerializeField] private string collectibleName = "SCORE";
 
-    // Update is called once per frame
     void Update()
     {
-        carrotDisplay.GetComponent<TMPro.TMP_Text>().text = "CARROTS:  " + carrotCount;
+        // Updated the UI with the correct name and count
+        collectibleDisplay.GetComponent<TMPro.TMP_Text>().text = collectibleName + ":  " + collectibleCount;
     }
 }

@@ -30,16 +30,15 @@ public class SaveController : MonoBehaviour
 
         SaveData saveData = new SaveData {
             playerPosition = player.transform.position,
-            carrotCounter = GameInfo.carrotCount,
+            // Updated from carrotCounter
+            collectibleCount = GameInfo.collectibleCount,
             generatedSegments = segmentGenerator.generatedSegmentData 
         };
 
-        // Convert the save data to a JSON string.
         string jsonString = JsonUtility.ToJson(saveData);
 
-        // Save the JSON string to PlayerPrefs.
         PlayerPrefs.SetString(SaveKey, jsonString);
-        PlayerPrefs.Save(); // Write to browser storage.
+        PlayerPrefs.Save();
         Debug.Log("Game Saved to PlayerPrefs.");
     }
 
@@ -50,10 +49,8 @@ public class SaveController : MonoBehaviour
             return;
         }
 
-        // Check if the save key exists in PlayerPrefs.
         if (PlayerPrefs.HasKey(SaveKey)) 
         {
-            // Retrieve the JSON string from PlayerPrefs.
             string jsonString = PlayerPrefs.GetString(SaveKey);
             SaveData saveData = JsonUtility.FromJson<SaveData>(jsonString);
             
@@ -61,7 +58,8 @@ public class SaveController : MonoBehaviour
             if (player != null) {
                 player.transform.position = saveData.playerPosition;
             }
-            GameInfo.carrotCount = saveData.carrotCounter;
+            // Updated from carrotCounter
+            GameInfo.collectibleCount = saveData.collectibleCount;
 
             segmentGenerator.LoadSegments(saveData.generatedSegments);
             Debug.Log("Game Loaded from PlayerPrefs.");
@@ -76,7 +74,6 @@ public class SaveController : MonoBehaviour
 
     public void RestartGame()
     {
-        // Delete the save data from PlayerPrefs.
         if (PlayerPrefs.HasKey(SaveKey))
         {
             PlayerPrefs.DeleteKey(SaveKey);
@@ -84,20 +81,21 @@ public class SaveController : MonoBehaviour
             Debug.Log("Save data deleted for restart.");
         }
 
-        GameInfo.carrotCount = 0;
+        // Updated from carrotCount
+        GameInfo.collectibleCount = 0;
         Time.timeScale = 1f;
 
         if (typeof(PauseController).GetMethod("SetPause") != null)
         {
             PauseController.SetPause(false);
         }
-        
+
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
-    
+
     public void ResetAndGoToMenu()
     {
         if (PlayerPrefs.HasKey(SaveKey))
@@ -107,12 +105,23 @@ public class SaveController : MonoBehaviour
             Debug.Log("Save data deleted.");
         }
 
-        GameInfo.carrotCount = 0;
+        // Updated from carrotCount
+        GameInfo.collectibleCount = 0;
         Time.timeScale = 1f;
+
+        if (typeof(PauseController).GetMethod("SetPause") != null)
+        {
+            PauseController.SetPause(false);
+        }
+
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
         SceneManager.LoadScene("StartMenu");
     }
+    
+    public void CompleteLevelAndGoToMenu()
+    {
+        ResetAndGoToMenu();
+    }
 }
-

@@ -2,15 +2,26 @@ using UnityEngine;
 
 public class Collectible : MonoBehaviour
 {
-    [SerializeField] AudioSource collectFX;
+    [SerializeField] private AudioSource collectFX;
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player")) 
         {
-            collectFX.Play();
-            GameInfo.collectibleCount += 1;
-            this.gameObject.SetActive(false);
+            GameInfo gameInfo = FindAnyObjectByType<GameInfo>();
+            if (gameInfo != null)
+            {
+                gameInfo.AddCollectible();
+            }
+
+            if (collectFX != null)
+            {
+                // Create a temporary audio source at the position
+                // Use the GlobalVolume from SoundEffectManager
+                AudioSource.PlayClipAtPoint(collectFX.clip, transform.position, SoundEffectManager.GlobalVolume); 
+            }
+
+            this.gameObject.SetActive(false); 
         }
     }
 }

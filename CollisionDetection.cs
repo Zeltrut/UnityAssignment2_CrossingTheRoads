@@ -33,6 +33,15 @@ public class CollisionDetection : MonoBehaviour
         
         if (other.CompareTag("Player"))
         {
+            // --- SHIELD CHECK ---
+            PlayerPowerUps powerUps = other.GetComponent<PlayerPowerUps>();
+            if (powerUps != null && powerUps.IsInvincible)
+            {
+                Debug.Log("Shield blocked the obstacle!");
+                return; // Ignore the collision!
+            }
+            // --------------------
+
             hasCollided = true;
             StartCoroutine(CollisionEndSequence());
         }
@@ -52,4 +61,3 @@ public class CollisionDetection : MonoBehaviour
         }
     }
 }
-

@@ -10,6 +10,9 @@ public class SoundEffectManager : MonoBehaviour
     [Header("Audio Sources Parent")]
     [SerializeField] private List<Transform> audioSourceParents;
 
+    // Static property so any script can access the current volume setting
+    public static float GlobalVolume { get; private set; } = 1.0f;
+
     private List<AudioSource> allAudioSources;
     private const string MASTER_VOLUME_PREFS_KEY = "MasterVolume";
 
@@ -17,46 +20,45 @@ public class SoundEffectManager : MonoBehaviour
     {
         allAudioSources = new List<AudioSource>();
 
-        if (audioSourceParents == null || audioSourceParents.Count == 0)
+        if (audioSourceParents != null)
         {
-            Debug.LogError("No Audio Source Parents have been assigned in the SoundEffectManager inspector!");
-            return;
-        }
-
-        foreach (Transform parent in audioSourceParents)
-        {
-            if (parent != null)
+            foreach (Transform parent in audioSourceParents)
             {
-                allAudioSources.AddRange(parent.GetComponentsInChildren<AudioSource>(true));
+                if (parent != null)
+                {
+                    allAudioSources.AddRange(parent.GetComponentsInChildren<AudioSource>(true));
+                }
             }
         }
         
-        if (masterVolumeSlider == null)
+        if (masterVolumeSlider != null)
         {
-            Debug.LogError("Master Volume Slider is not assigned in the SoundEffectManager inspector!");
-            return;
+            // Load saved volume
+            GlobalVolume = PlayerPrefs.GetFloat(MASTER_VOLUME_PREFS_KEY, 1.0f);
+            
+            masterVolumeSlider.SetValueWithoutNotify(GlobalVolume);
+            SetMasterVolume(GlobalVolume);
+
+            masterVolumeSlider.onValueChanged.AddListener(OnMasterSliderValueChanged);
         }
-
-        float savedVolume = PlayerPrefs.GetFloat(MASTER_VOLUME_PREFS_KEY, 1.0f);
-        
-        masterVolumeSlider.SetValueWithoutNotify(savedVolume);
-        SetMasterVolume(savedVolume);
-
-        masterVolumeSlider.onValueChanged.AddListener(OnMasterSliderValueChanged);
     }
     
     private void OnMasterSliderValueChanged(float value)
     {
+        GlobalVolume = value;
         SetMasterVolume(value);
         PlayerPrefs.SetFloat(MASTER_VOLUME_PREFS_KEY, value);
     }
 
     public void SetMasterVolume(float volume)
     {
+        // Update all registered audio sources
         foreach (AudioSource source in allAudioSources)
         {
-            source.volume = volume;
+            if (source != null)
+            {
+                source.volume = volume;
+            }
         }
     }
 }
-
